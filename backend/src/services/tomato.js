@@ -23,7 +23,45 @@ client.interceptors.response.use(
 module.exports = {
   async searchNovel(keyword) {
     const res = await client.get('/api/search', { params: { q: keyword } });
-    return res.data;
+    const items = Array.isArray(res.data) ? res.data : res.data?.items || [];
+
+    return items
+      .map((item) => {
+        const raw = item?.raw || item || {};
+        const totalChapters =
+          item?.total_chapters ??
+          raw?.total_chapters ??
+          raw?.chapter_count ??
+          raw?.last_chapter_item?.chapter_index;
+
+        return {
+          book_id: String(item?.book_id ?? raw?.book_id ?? ''),
+          title:
+            item?.title ??
+            item?.book_name ??
+            raw?.book_name ??
+            raw?.book_short_name ??
+            '',
+          author: item?.author ?? raw?.author ?? null,
+          cover_url:
+            item?.cover_url ??
+            item?.thumb_uri ??
+            raw?.thumb_uri ??
+            raw?.thumb_url ??
+            raw?.audio_thumb_uri ??
+            null,
+          description:
+            item?.description ??
+            item?.abstract ??
+            raw?.abstract ??
+            raw?.book_abstract_v2 ??
+            null,
+          total_chapters: Number.isFinite(Number(totalChapters))
+            ? Number(totalChapters)
+            : undefined,
+        };
+      })
+      .filter((item) => item.book_id && item.title);
   },
 
   async downloadNovel(bookId) {
