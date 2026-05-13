@@ -22,7 +22,7 @@ client.interceptors.response.use(
 
 module.exports = {
   async searchNovel(keyword) {
-    const res = await client.get('/api/search', { params: { keyword } });
+    const res = await client.get('/api/search', { params: { q: keyword } });
     return res.data;
   },
 
