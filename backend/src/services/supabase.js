@@ -1,8 +1,12 @@
 const { createClient } = require('@supabase/supabase-js');
+const ws = require('ws');
 const config = require('../config');
 
+// Node 20 chưa có WebSocket native; @supabase/realtime-js từ v2.45 trở đi
+// đòi WebSocket constructor ngay khi createClient() → cung cấp `ws` qua transport.
 const supabase = createClient(config.SUPABASE_URL, config.SUPABASE_SERVICE_KEY, {
   auth: { persistSession: false },
+  realtime: { transport: ws },
 });
 
 async function upsertNovel(novel) {
