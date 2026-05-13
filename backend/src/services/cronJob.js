@@ -49,13 +49,22 @@ async function syncOneNovel(novel, { action = 'update' } = {}) {
       ? await tomato.downloadNovel(novel.book_id)
       : await tomato.updateNovel(novel.book_id);
 
+    let jobStatus = null;
     if (result?.taskId || result?.task_id) {
-      await waitForTask(result.taskId || result.task_id);
+      jobStatus = await waitForTask(result.taskId || result.task_id);
+      logger.info(`Tomato job done: ${JSON.stringify(jobStatus)}`);
     }
 
     const epubPath = findLatestEpubFor(novel.book_id, startMs);
     if (!epubPath) {
-      await supabaseSvc.logSync(novel.id, 'check', 0, 'failed', 'EPUB không tìm thấy');
+      const allFiles = walkDir(config.TOMATO_DOWNLOAD_DIR);
+      const sample = allFiles.slice(-15).join(' | ') || '(rỗng)';
+      const diag =
+        `EPUB không tìm thấy. dir=${config.TOMATO_DOWNLOAD_DIR} ` +
+        `files=${allFiles.length} sample=[${sample}] ` +
+        `job=${JSON.stringify(jobStatus || {}).slice(0, 300)}`;
+      logger.warn(diag);
+      await supabaseSvc.logSync(novel.id, 'check', 0, 'failed', diag);
       return { newChapters: 0, error: 'EPUB không tìm thấy' };
     }
 
