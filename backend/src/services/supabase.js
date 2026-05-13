@@ -1,4 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
+const fs = require('fs');
+const path = require('path');
 const ws = require('ws');
 const config = require('../config');
 
@@ -19,6 +21,7 @@ async function upsertNovel(novel) {
         author: novel.author,
         cover_url: novel.cover_url,
         description: novel.description,
+        epub_storage_path: novel.epub_storage_path,
         total_chapters: novel.total_chapters ?? 0,
         last_updated_at: new Date().toISOString(),
       },
@@ -80,6 +83,19 @@ async function upsertChapters(novelId, chapters) {
   return rows.length;
 }
 
+async function uploadNovelEpub(novel, epubPath) {
+  const storagePath = `${novel.book_id}/${path.basename(epubPath)}`;
+  const file = fs.readFileSync(epubPath);
+  const { error } = await supabase.storage
+    .from('novels')
+    .upload(storagePath, file, {
+      contentType: 'application/epub+zip',
+      upsert: true,
+    });
+  if (error) throw error;
+  return storagePath;
+}
+
 async function saveTranslation(chapterId, translatedContent, apiUsed) {
   const { error } = await supabase
     .from('chapters')
@@ -109,6 +125,7 @@ module.exports = {
   getAllNovels,
   getChapterCount,
   upsertChapters,
+  uploadNovelEpub,
   saveTranslation,
   logSync,
 };

@@ -14,6 +14,7 @@ create table if not exists novels (
   title text not null,
   author text,
   cover_url text,
+  epub_storage_path text,
   description text,
   total_chapters integer not null default 0,
   status text not null default 'active'               -- active | paused | completed
@@ -63,6 +64,9 @@ create index if not exists idx_novels_book_id on novels(book_id);
 create index if not exists idx_novels_updated on novels(last_updated_at desc);
 create index if not exists idx_sync_logs_novel on sync_logs(novel_id, created_at desc);
 
+-- Nếu schema đã tạo trước đó, bổ sung cột lưu path EPUB trong Storage.
+alter table novels add column if not exists epub_storage_path text;
+
 -- ============================================================
 -- View tóm tắt: số chương đã dịch / tổng
 -- ============================================================
@@ -73,6 +77,7 @@ select
   n.title,
   n.author,
   n.cover_url,
+  n.epub_storage_path,
   n.total_chapters,
   n.last_updated_at,
   n.status,

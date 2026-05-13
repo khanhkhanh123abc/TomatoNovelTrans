@@ -50,6 +50,7 @@ async function syncOneNovel(novel, { action = 'update' } = {}) {
       return { newChapters: 0, error: 'EPUB không tìm thấy' };
     }
 
+    const epubStoragePath = await supabaseSvc.uploadNovelEpub(novel, epubPath);
     const parsed = await parseEpub(epubPath);
     const currentCount = await supabaseSvc.getChapterCount(novel.id);
     const newChapters = Math.max(0, parsed.chapters.length - currentCount);
@@ -60,6 +61,7 @@ async function syncOneNovel(novel, { action = 'update' } = {}) {
         ...novel,
         title: novel.title || parsed.title,
         author: novel.author || parsed.author,
+        epub_storage_path: epubStoragePath,
         total_chapters: parsed.chapters.length,
       });
       await supabaseSvc.logSync(novel.id, action, newChapters, 'success',
@@ -70,7 +72,7 @@ async function syncOneNovel(novel, { action = 'update' } = {}) {
       logger.info('  không có chương mới');
     }
 
-    return { newChapters, totalChapters: parsed.chapters.length };
+    return { newChapters, totalChapters: parsed.chapters.length, epubStoragePath };
   } catch (err) {
     logger.error(`Sync failed: ${novel.title}: ${err.message}`);
     await supabaseSvc.logSync(novel.id, action, 0, 'failed', err.message);
