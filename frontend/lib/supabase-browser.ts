@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 const requiredEnv = (name: string) => {
-  const value = process.env[name];
+  const value = process.env[name]?.trim();
   if (!value) throw new Error(`${name} chưa cấu hình`);
   return value;
 };

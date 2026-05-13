@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 // Tách 2 client để không lỡ tay leak service key qua read API public.
 
 const requiredEnv = (name: string) => {
-  const value = process.env[name];
+  const value = process.env[name]?.trim();
   if (!value) throw new Error(`${name} chưa cấu hình`);
   return value;
 };

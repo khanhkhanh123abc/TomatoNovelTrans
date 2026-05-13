@@ -9,6 +9,7 @@ import type { Novel } from '@/lib/types';
 export const dynamic = 'force-dynamic';
 
 async function getNovels(): Promise<{ novels: Novel[]; error: string | null }> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || 'missing NEXT_PUBLIC_SUPABASE_URL';
   try {
     const supa = supabaseAnon();
     const { data, error } = await supa
@@ -23,7 +24,7 @@ async function getNovels(): Promise<{ novels: Novel[]; error: string | null }> {
     return { novels: (data as Novel[]) || [], error: null };
   } catch (e) {
     console.error('getNovels failed:', e);
-    return { novels: [], error: (e as Error).message };
+    return { novels: [], error: `${(e as Error).message} (${supabaseUrl})` };
   }
 }
 
