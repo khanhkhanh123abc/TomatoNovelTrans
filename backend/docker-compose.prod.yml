@@ -1,0 +1,40 @@
+# Compose file dùng trên Azure VM — pull image đã build sẵn từ GHCR
+# thay vì build tại chỗ. CI/CD push image lên ghcr.io rồi VM pull.
+#
+# Cách dùng trên VM:
+#   docker compose -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.prod.yml up -d
+
+services:
+  tomato-downloader:
+    image: zhongbai233/tomato-novel-downloader-webui:latest
+    container_name: tomato-downloader
+    ports:
+      - "18423:18423"
+    environment:
+      TOMATO_WEB_ADDR: 0.0.0.0:18423
+      TOMATO_WEB_PASSWORD: ${TOMATO_PASSWORD}
+    volumes:
+      - ./tomato-data:/data
+    command: --server --data-dir /data
+    restart: unless-stopped
+
+  novel-backend:
+    image: ghcr.io/khanhkhanh123abc/tomatonoveltrans-backend:latest
+    container_name: novel-backend
+    ports:
+      - "3001:3001"
+    environment:
+      TOMATO_API_URL: http://tomato-downloader:18423
+      TOMATO_PASSWORD: ${TOMATO_PASSWORD}
+      TOMATO_DOWNLOAD_DIR: /data
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+      API_SECRET_KEY: ${API_SECRET_KEY}
+      CRON_SCHEDULE: ${CRON_SCHEDULE:-0 */8 * * *}
+      PORT: 3001
+    volumes:
+      - ./tomato-data:/data:ro
+    depends_on:
+      - tomato-downloader
+    restart: unless-stopped

@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+.vite/
+
+# Env (NEVER commit)
+.env
+.env.local
+.env.*.local
+.env.production
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS / Editor / Tooling
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+.claude/
+
+# Tomato downloader data
+backend/tomato-data/
+
+# Misc
+*.pem
+.turbo
+coverage/
