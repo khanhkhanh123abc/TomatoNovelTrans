@@ -6,7 +6,7 @@ const client = axios.create({
   baseURL: config.TOMATO_API_URL,
   timeout: 30000,
   headers: config.TOMATO_PASSWORD
-    ? { Authorization: `Bearer ${config.TOMATO_PASSWORD}` }
+    ? { 'x-tomato-password': config.TOMATO_PASSWORD }
     : {},
 });
 
@@ -78,18 +78,30 @@ module.exports = {
   },
 
   async downloadNovel(bookId) {
-    const res = await client.post('/api/download', { book_id: bookId });
-    return res.data;
+    const res = await client.post('/api/jobs', { book_id: bookId });
+    return {
+      ...res.data,
+      task_id: res.data?.id,
+    };
   },
 
   async getTaskStatus(taskId) {
-    const res = await client.get(`/api/task/${taskId}`);
-    return res.data;
+    const res = await client.get('/api/jobs');
+    const items = Array.isArray(res.data?.items) ? res.data.items : [];
+    const job = items.find((item) => String(item.id) === String(taskId));
+    if (!job) {
+      return { status: 'failed', message: `Không tìm thấy Tomato job ${taskId}` };
+    }
+
+    return {
+      ...job,
+      completed: job.state === 'done',
+      status: job.state,
+    };
   },
 
   async updateNovel(bookId) {
-    const res = await client.post('/api/update', { book_id: bookId });
-    return res.data;
+    return this.downloadNovel(bookId);
   },
 
   async listDownloads() {

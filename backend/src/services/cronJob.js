@@ -25,7 +25,9 @@ async function waitForTask(taskId, { maxWaitMs = 5 * 60 * 1000, pollMs = 5000 } 
   while (Date.now() - start < maxWaitMs) {
     const status = await tomato.getTaskStatus(taskId);
     if (status?.completed || status?.status === 'done') return status;
-    if (status?.status === 'failed') throw new Error(`Task ${taskId} failed: ${status.message || ''}`);
+    if (['failed', 'error', 'cancelled', 'canceled'].includes(status?.status)) {
+      throw new Error(`Task ${taskId} failed: ${status.message || status.error || ''}`);
+    }
     await sleep(pollMs);
   }
   throw new Error(`Task ${taskId} timeout`);

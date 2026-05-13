@@ -15,7 +15,7 @@ module.exports = {
   SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY,
 
   TOMATO_API_URL: process.env.TOMATO_API_URL || 'http://localhost:18423',
-  TOMATO_PASSWORD: process.env.TOMATO_PASSWORD || '',
+  TOMATO_PASSWORD: process.env.TOMATO_PASSWORD || process.env.TOMATO_WEB_PASSWORD || '',
   TOMATO_DOWNLOAD_DIR: process.env.TOMATO_DOWNLOAD_DIR || '/data',
 
   CRON_SCHEDULE: process.env.CRON_SCHEDULE ?? '0 */8 * * *',
