@@ -4,113 +4,145 @@ Workflow ở `.github/workflows/`:
 
 | File | Trigger | Việc làm |
 |---|---|---|
-| `backend.yml` | push vào `main` đụng `backend/**` | Syntax check → build Docker image → push `ghcr.io/khanhkhanh123abc/tomatonoveltrans-backend:latest` → SSH VM pull & restart |
-| `frontend.yml` | push/PR vào `frontend/**` | `npm install` → `tsc --noEmit` → `next build` |
+| `backend-hf.yml` | push `main` đụng `backend/**` | Đóng gói `backend/` → push lên HuggingFace Space → Space tự build Docker & restart |
+| `frontend.yml` | push/PR đụng `frontend/**` | `npm install` → `tsc --noEmit` → `next build` |
 
-## 1. GitHub repository setup
+> Workflow Vercel (deploy frontend) chạy độc lập sau khi bạn connect repo bên Vercel — không cần GitHub Actions.
 
-### Secrets (`Settings → Secrets and variables → Actions → New repository secret`)
+---
 
-| Secret | Giá trị | Dùng cho |
-|---|---|---|
-| `VM_SSH_HOST` | IP/hostname Azure VM | backend deploy |
-| `VM_SSH_USER` | username SSH (vd `azureuser`) | backend deploy |
-| `VM_SSH_KEY` | private key (nội dung file `~/.ssh/id_ed25519`) | backend deploy |
-| `VM_SSH_PORT` | port SSH (mặc định 22, để trống nếu 22) | backend deploy |
-| `VM_DEPLOY_PATH` | path repo clone trên VM, vd `/home/azureuser/TomatoNovelTrans` | backend deploy |
+## 1. Tạo Hugging Face Space (lần đầu)
 
-> `GITHUB_TOKEN` đã có sẵn (do GitHub Actions tự cấp), không cần thêm thủ công. Nó dùng để push image lên GHCR.
+1. Đăng nhập https://huggingface.co
+2. Vào https://huggingface.co/new-space
+3. Cấu hình:
+   - **Space name**: `tomato-novel-backend` (hoặc tuỳ chọn)
+   - **License**: tuỳ
+   - **SDK**: **Docker**
+   - **Hardware**: CPU basic (free, 16GB RAM)
+   - **Visibility**: Public (free tier) hoặc Private (yêu cầu Pro để Space public không sleep, nhưng Docker space free vẫn không sleep)
+4. **Create Space** — Space mặc định trống, đợi GitHub Actions push code vào.
 
-### Variables (`Settings → Secrets and variables → Actions → Variables tab`)
+### 1.1. Secret cần thêm trên HF Space
 
-| Variable | Giá trị | Ý nghĩa |
-|---|---|---|
-| `DEPLOY_ENABLED` | `true` | Bật job deploy. Đặt `false` (hoặc không tạo) → workflow chỉ build & push image, không SSH deploy. |
+`Space → Settings → Variables and secrets → New secret`:
 
-Để workflow chạy thử trước khi setup VM xong: đừng tạo `DEPLOY_ENABLED`, hoặc đặt `false`. Job `deploy` sẽ skip.
+| Secret | Giá trị |
+|---|---|
+| `SUPABASE_URL` | URL Supabase |
+| `SUPABASE_SERVICE_KEY` | service-role key |
+| `API_SECRET_KEY` | random string dài — frontend Vercel dùng làm `x-api-key` |
+| `TOMATO_WEB_PASSWORD` | optional, bảo vệ Tomato WebUI nội bộ |
+| `CRON_SCHEDULE` | optional, mặc định `0 */8 * * *` |
 
-## 2. Setup lần đầu trên Azure VM
+### 1.2. Token HF cho GitHub Actions
 
-```bash
-# 2.1. Cài Docker
-sudo apt update && sudo apt install -y docker.io docker-compose-plugin
-sudo usermod -aG docker $USER && newgrp docker
+Vào https://huggingface.co/settings/tokens → **New token** → name "github-actions" → **Write** access → Generate → copy token.
 
-# 2.2. Clone repo
-cd ~
-git clone git@github.com:khanhkhanh123abc/TomatoNovelTrans.git
-cd TomatoNovelTrans
+---
 
-# 2.3. Cấu hình env cho backend
-cp backend/.env.example backend/.env
-nano backend/.env   # điền SUPABASE_*, API_SECRET_KEY, TOMATO_PASSWORD
+## 2. GitHub repository setup
 
-# 2.4. Pull image lần đầu (GHCR public, không cần login nếu image public)
-#     Nếu image private, login trước:
-#     echo $PAT | docker login ghcr.io -u khanhkhanh123abc --password-stdin
-docker compose -f backend/docker-compose.prod.yml pull
+Vào `Settings → Secrets and variables → Actions → New repository secret`:
 
-# 2.5. Khởi động
-docker compose -f backend/docker-compose.prod.yml --env-file backend/.env up -d
+| Secret | Giá trị |
+|---|---|
+| `HF_TOKEN` | Token vừa tạo ở 1.2 |
+| `HF_USERNAME` | Username HuggingFace của bạn (vd `khanhkhanh`) |
+| `HF_SPACE_NAME` | Tên Space tạo ở 1 (vd `tomato-novel-backend`) |
 
-# 2.6. Kiểm tra
-curl http://localhost:3001/api/health
-docker logs novel-backend --tail 50
-```
+---
 
-### Mở port
-
-Azure Portal → VM → Networking → Add inbound rule:
-- Port 3001 (backend, cho Vercel call) — restrict source IP nếu muốn
-- Port 18423 (Tomato Web UI, tuỳ chọn — chỉ mở khi cần truy cập GUI)
-
-## 3. Sau đó, mỗi lần push code mới
+## 3. Push code → tự deploy
 
 ```
-[push code vào main, có thay đổi backend/]
+git push origin main
    ↓
-GitHub Actions chạy backend.yml:
-   1. ci          → kiểm syntax
-   2. build-push  → build Dockerfile, push ghcr.io/...backend:latest + sha-xxxxxxx
-   3. deploy      → SSH VM, git pull, docker compose pull, up -d
+.github/workflows/backend-hf.yml chạy:
+   1. Checkout repo GitHub
+   2. Stage nội dung backend/ vào _hf_space/ (Dockerfile.hf → Dockerfile, space-README.md → README.md, …)
+   3. git push --force lên https://huggingface.co/spaces/<HF_USER>/<HF_SPACE>
    ↓
-Backend mới chạy trên VM (downtime ~5-10 giây)
+HuggingFace nhận push, tự build Docker image từ Dockerfile mới
+   ↓
+Space khởi động lại với code mới (downtime ~30-60s)
 ```
 
-## 4. Vercel frontend
+URL backend sau khi build xong: `https://<HF_USERNAME>-<HF_SPACE_NAME>.hf.space`
 
-Connect repo trên Vercel:
+Verify: `curl https://<HF_USERNAME>-<HF_SPACE_NAME>.hf.space/api/health` → `{"status":"ok"}`
+
+---
+
+## 4. Frontend Vercel
+
 1. https://vercel.com/new → import `TomatoNovelTrans`
 2. **Root Directory** → `frontend`
-3. **Framework Preset** → Next.js (auto-detect)
-4. **Environment Variables** → copy từ `frontend/.env.example`:
-   - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_KEY` (Production only)
-   - `AZURE_BACKEND_URL`, `AZURE_API_SECRET_KEY`
-   - `GEMINI_API_KEY`, `GEMINI_MODEL` (tuỳ chọn `DEEPSEEK_API_KEY`, `QWEN_API_KEY`, `MYMEMORY_EMAIL`)
-5. Deploy.
+3. **Environment Variables** — điền:
 
-Vercel tự build lại mỗi push vào main. GitHub Actions `frontend.yml` chạy song song để early-fail nếu lint/typecheck hỏng.
+| Var | Giá trị |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
+| `SUPABASE_SERVICE_KEY` | service-role key |
+| `AZURE_BACKEND_URL` | `https://<HF_USER>-<HF_SPACE>.hf.space` |
+| `AZURE_API_SECRET_KEY` | giống `API_SECRET_KEY` ở HF Space |
+| `GEMINI_API_KEY` | aistudio.google.com/apikey |
+| `GEMINI_MODEL` | `gemini-2.5-flash` |
+| `DEEPSEEK_API_KEY` | optional |
+| `QWEN_API_KEY` | optional |
+| `MYMEMORY_EMAIL` | optional |
+
+4. Deploy. Vercel tự rebuild khi push vào `main`.
+
+---
 
 ## 5. Xử lý sự cố
 
 | Lỗi | Cách xử lý |
 |---|---|
-| Workflow `deploy` skip | Tạo variable `DEPLOY_ENABLED=true` trong Settings → Variables |
-| `Permission denied (publickey)` ở SSH step | Kiểm tra `VM_SSH_KEY` đã paste đầy đủ (cả `-----BEGIN…-----`), key trên VM nằm trong `~/.ssh/authorized_keys` |
-| `unauthorized` khi pull GHCR | Image private → trên VM `docker login ghcr.io -u <user> -p <PAT-with-read:packages>`. Hoặc vào Packages của repo, set Visibility = Public. |
-| Backend không restart | SSH vào VM: `docker logs novel-backend --tail 100` và `docker compose -f backend/docker-compose.prod.yml ps` |
-| Vercel build fail | Xem log Vercel; thường thiếu env vars. Check log GitHub Actions `frontend.yml` để biết lỗi typescript/build |
+| GitHub Action `backend-hf.yml` fail "Thiếu secret HF_*" | Kiểm tra 3 secret `HF_TOKEN`, `HF_USERNAME`, `HF_SPACE_NAME` ở GitHub repo settings |
+| HF Space build fail | Vào tab **Logs** của Space — thường do dockerfile syntax hoặc môi trường base image. Kiểm tra Tomato image `zhongbai233/tomato-novel-downloader-webui` vẫn còn trên Docker Hub. |
+| Space build OK nhưng `/api/health` không trả | Tab **Logs** → tìm log từ supervisord + node. Có thể supervisord chưa start `backend` nếu Tomato crash. |
+| Tomato 401/403 từ backend | Đặt cùng `TOMATO_WEB_PASSWORD` ở cả 2 nơi: secret HF Space + frontend env `AZURE_API_SECRET_KEY` (không liên quan, đây là khác — `TOMATO_WEB_PASSWORD` chỉ là internal pwd cho Tomato). Hoặc bỏ password đi. |
+| Vercel `fetch` Azure backend fail (CORS / timeout) | Mặc định backend đã `app.use(cors())` cho phép all origins. Nếu vẫn fail kiểm tra `AZURE_BACKEND_URL` đúng URL HF Space và `AZURE_API_SECRET_KEY` match. |
+| Free HF Space restart mất file `/data` | Bình thường — chương đã sync sang Supabase rồi. Lần sync sau Tomato sẽ re-download. |
 
-## 6. Tag image cụ thể (rollback)
+---
 
-GHCR tags được push gồm:
-- `latest` — luôn là build mới nhất
-- `sha-<7chars>` — theo commit SHA
+## 6. Dev local
 
-Rollback về commit cũ:
 ```bash
-# Trên VM
-docker pull ghcr.io/khanhkhanh123abc/tomatonoveltrans-backend:sha-abc1234
-# Sửa docker-compose.prod.yml image tag → restart
+# Backend chạy local (không có Tomato — chỉ test Express + Supabase)
+cd backend
+cp .env.example .env  # điền SUPABASE_*, API_SECRET_KEY
+npm install
+npm run dev
+
+# Frontend
+cd frontend
+cp .env.example .env.local
+npm install
+npm run dev   # → localhost:3000
+```
+
+Muốn test cả Tomato local: chạy `docker run -p 18423:18423 -v $PWD/tomato-data:/data zhongbai233/tomato-novel-downloader-webui --server --data-dir /data` rồi set `TOMATO_API_URL=http://localhost:18423` trong `backend/.env`.
+
+---
+
+## 7. Files trong repo phục vụ deploy
+
+```
+.github/workflows/
+├── backend-hf.yml      # GitHub Actions: push backend/ → HF Space
+└── frontend.yml        # GitHub Actions: typecheck + build Next.js
+
+backend/
+├── Dockerfile          # cho dev local / VM (build:.)
+├── Dockerfile.hf       # cho HF Space (combine Tomato + Express + supervisord)
+├── docker-compose.yml  # dev local: 2 service tách biệt
+├── docker-compose.prod.yml  # VM deploy: image GHCR (không dùng nếu host HF)
+├── supervisord.conf    # config supervisord trong Dockerfile.hf
+├── space-README.md     # README HF Space (workflow rename → README.md)
+└── ...
 ```

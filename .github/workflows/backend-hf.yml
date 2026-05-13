@@ -1,0 +1,52 @@
+name: Backend · Deploy to HuggingFace Space
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-hf.yml'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stage HF Space content
+        run: |
+          set -euo pipefail
+          mkdir -p _hf_space
+          cp backend/Dockerfile.hf       _hf_space/Dockerfile
+          cp backend/supervisord.conf    _hf_space/
+          cp backend/space-README.md     _hf_space/README.md
+          cp backend/package.json        _hf_space/
+          [ -f backend/package-lock.json ] && cp backend/package-lock.json _hf_space/ || true
+          cp -r backend/src              _hf_space/
+          echo "=== Files ==="
+          ls -la _hf_space/
+
+      - name: Push to HuggingFace Space
+        env:
+          HF_TOKEN:    ${{ secrets.HF_TOKEN }}
+          HF_USER:     ${{ secrets.HF_USERNAME }}
+          HF_SPACE:    ${{ secrets.HF_SPACE_NAME }}
+        run: |
+          set -euo pipefail
+          if [ -z "${HF_TOKEN}" ] || [ -z "${HF_USER}" ] || [ -z "${HF_SPACE}" ]; then
+            echo "::error::Thiếu secret HF_TOKEN / HF_USERNAME / HF_SPACE_NAME"
+            exit 1
+          fi
+
+          cd _hf_space
+          git init -b main -q
+          git config user.email "github-actions@users.noreply.github.com"
+          git config user.name  "github-actions[bot]"
+          git add -A
+          git commit -q -m "Sync from GitHub ${GITHUB_SHA::7}"
+
+          REMOTE="https://${HF_USER}:${HF_TOKEN}@huggingface.co/spaces/${HF_USER}/${HF_SPACE}"
+          # Force push: HF Space lịch sử do GitHub Action quản lý, mỗi lần là snapshot mới.
+          git push --force "$REMOTE" main
+          echo "✅ Đã sync: https://huggingface.co/spaces/${HF_USER}/${HF_SPACE}"

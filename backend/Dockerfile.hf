@@ -1,0 +1,41 @@
+# Single-container build cho Hugging Face Spaces.
+# Gộp Tomato Novel Downloader (Rust binary, port 18423 nội bộ)
+# + Express backend (port 7860, public qua HF Space) trong cùng container,
+# điều phối bằng supervisord.
+
+FROM zhongbai233/tomato-novel-downloader-webui:latest
+
+USER root
+
+# Node 20 + supervisord. Image base là debian:bookworm-slim → dùng apt.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl ca-certificates supervisor gnupg \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /backend
+
+COPY package.json package-lock.json* ./
+RUN npm install --omit=dev --no-audit --no-fund
+
+COPY src ./src
+COPY supervisord.conf /etc/supervisor/conf.d/services.conf
+
+# HF Spaces expect app trên app_port (mặc định 7860).
+# Tomato binary chỉ bind 127.0.0.1 nên không lộ ra ngoài.
+ENV PORT=7860 \
+    NODE_ENV=production \
+    TOMATO_API_URL=http://127.0.0.1:18423 \
+    TOMATO_WEB_ADDR=127.0.0.1:18423 \
+    TOMATO_DATA_DIR=/data \
+    TOMATO_DOWNLOAD_DIR=/data
+
+RUN mkdir -p /data && chmod 777 /data
+
+EXPOSE 7860
+
+# Image base set ENTRYPOINT là entrypoint của Tomato — override để supervisord lo cả 2 tiến trình.
+ENTRYPOINT []
+CMD ["supervisord", "-n", "-c", "/etc/supervisor/conf.d/services.conf"]
