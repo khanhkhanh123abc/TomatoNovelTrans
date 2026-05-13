@@ -8,7 +8,7 @@ import type { Novel } from '@/lib/types';
 // NEXT_PUBLIC_SUPABASE_* chưa cấu hình.
 export const dynamic = 'force-dynamic';
 
-async function getNovels(): Promise<Novel[]> {
+async function getNovels(): Promise<{ novels: Novel[]; error: string | null }> {
   try {
     const supa = supabaseAnon();
     const { data, error } = await supa
@@ -18,17 +18,17 @@ async function getNovels(): Promise<Novel[]> {
       .order('last_updated_at', { ascending: false });
     if (error) {
       console.error(error);
-      return [];
+      return { novels: [], error: error.message };
     }
-    return (data as Novel[]) || [];
+    return { novels: (data as Novel[]) || [], error: null };
   } catch (e) {
     console.error('getNovels failed:', e);
-    return [];
+    return { novels: [], error: (e as Error).message };
   }
 }
 
 export default async function HomePage() {
-  const novels = await getNovels();
+  const { novels, error } = await getNovels();
 
   return (
     <main className="min-h-screen px-4 md:px-8 py-6 max-w-7xl mx-auto">
@@ -45,7 +45,11 @@ export default async function HomePage() {
         </div>
       </header>
 
-      {novels.length === 0 ? (
+      {error ? (
+        <div className="mx-auto max-w-2xl rounded-lg border border-rose-700 bg-rose-900/30 p-4 text-sm text-rose-100">
+          Không đọc được danh sách truyện: {error}
+        </div>
+      ) : novels.length === 0 ? (
         <div className="text-center py-20 text-slate-400">
           <p className="text-lg mb-2">Chưa có truyện nào trong kho.</p>
           <Link href="/search" className="text-emerald-400 hover:underline">
