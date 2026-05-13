@@ -20,6 +20,18 @@ client.interceptors.response.use(
   }
 );
 
+function normalizeCoverUrl(value) {
+  if (!value || typeof value !== 'string') return null;
+  if (/^https?:\/\//i.test(value)) return value;
+
+  const clean = value.replace(/^\/+/, '');
+  if (clean.startsWith('novel-pic/')) {
+    return `https://p3-novel.byteimg.com/origin/${clean}`;
+  }
+
+  return value;
+}
+
 module.exports = {
   async searchNovel(keyword) {
     const res = await client.get('/api/search', { params: { q: keyword } });
@@ -43,13 +55,14 @@ module.exports = {
             raw?.book_short_name ??
             '',
           author: item?.author ?? raw?.author ?? null,
-          cover_url:
+          cover_url: normalizeCoverUrl(
             item?.cover_url ??
-            item?.thumb_uri ??
-            raw?.thumb_uri ??
-            raw?.thumb_url ??
-            raw?.audio_thumb_uri ??
-            null,
+              item?.thumb_uri ??
+              raw?.thumb_uri ??
+              raw?.thumb_url ??
+              raw?.audio_thumb_uri ??
+              null
+          ),
           description:
             item?.description ??
             item?.abstract ??
