@@ -19,9 +19,14 @@ router.post('/add', async (req, res, next) => {
       total_chapters: 0,
     });
 
-    syncOneNovel(novel, { action: 'download' }).catch(() => {});
+    const result = await syncOneNovel(novel, { action: 'download' });
 
-    res.json({ success: true, novel, message: 'Đang tải truyện ở chế độ nền…' });
+    res.json({
+      success: true,
+      novel,
+      ...result,
+      message: `Đã tải ${result.totalChapters || 0} chương`,
+    });
   } catch (err) {
     next(err);
   }
@@ -33,7 +38,8 @@ router.post('/:bookId/sync', async (req, res, next) => {
     const { bookId } = req.params;
     const novel = await supabaseSvc.getNovelByBookId(bookId);
     if (!novel) return res.status(404).json({ error: 'Không tìm thấy truyện' });
-    const result = await syncOneNovel(novel);
+    const action = (novel.total_chapters || 0) === 0 ? 'download' : 'update';
+    const result = await syncOneNovel(novel, { action });
     res.json({ success: true, ...result });
   } catch (err) {
     next(err);
