@@ -4,20 +4,27 @@ import NovelCard from './components/NovelCard';
 import SyncAllButton from './components/SyncAllButton';
 import type { Novel } from '@/lib/types';
 
-export const revalidate = 60;
+// Render ở request time để env vars Vercel có sẵn; tránh build fail khi
+// NEXT_PUBLIC_SUPABASE_* chưa cấu hình.
+export const dynamic = 'force-dynamic';
 
 async function getNovels(): Promise<Novel[]> {
-  const supa = supabaseAnon();
-  const { data, error } = await supa
-    .from('novels')
-    .select('*')
-    .eq('status', 'active')
-    .order('last_updated_at', { ascending: false });
-  if (error) {
-    console.error(error);
+  try {
+    const supa = supabaseAnon();
+    const { data, error } = await supa
+      .from('novels')
+      .select('*')
+      .eq('status', 'active')
+      .order('last_updated_at', { ascending: false });
+    if (error) {
+      console.error(error);
+      return [];
+    }
+    return (data as Novel[]) || [];
+  } catch (e) {
+    console.error('getNovels failed:', e);
     return [];
   }
-  return (data as Novel[]) || [];
 }
 
 export default async function HomePage() {
