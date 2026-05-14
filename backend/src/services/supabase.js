@@ -1,6 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
-const path = require('path');
 const ws = require('ws');
 const config = require('../config');
 
@@ -84,7 +83,9 @@ async function upsertChapters(novelId, chapters) {
 }
 
 async function uploadNovelEpub(novel, epubPath) {
-  const storagePath = `${novel.book_id}/${path.basename(epubPath)}`;
+  // Storage key chỉ chấp nhận ASCII an toàn, tên Tomato chứa ký tự
+  // Trung + ？ : … nên dùng book_id làm key cố định (1 novel = 1 file).
+  const storagePath = `${novel.book_id}.epub`;
   const file = fs.readFileSync(epubPath);
   const { error } = await supabase.storage
     .from('novels')
