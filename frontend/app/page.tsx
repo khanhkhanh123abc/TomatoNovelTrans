@@ -18,17 +18,23 @@ async function getNovels(): Promise<{ novels: Novel[]; error: string | null }> {
       .eq('status', 'active')
       .order('last_updated_at', { ascending: false });
     if (error) {
-      console.error(error);
-      return { novels: [], error: error.message };
+      const e = error as { message: string; cause?: { code?: string; message?: string }; details?: string };
+      console.error('Supabase returned error:', e);
+      const cause = e.cause
+        ? ` cause=${e.cause.code || e.cause.message || JSON.stringify(e.cause)}`
+        : e.details
+          ? ` details=${e.details}`
+          : '';
+      return { novels: [], error: `[supabase] ${e.message}${cause} url=${supabaseUrl}` };
     }
     return { novels: (data as Novel[]) || [], error: null };
   } catch (e) {
     const err = e as Error & { cause?: { code?: string; message?: string } };
-    console.error('getNovels failed:', err, 'cause:', err.cause);
+    console.error('getNovels threw:', err, 'cause:', err.cause);
     const cause = err.cause
       ? ` cause=${err.cause.code || err.cause.message || JSON.stringify(err.cause)}`
       : '';
-    return { novels: [], error: `${err.message}${cause} url=${supabaseUrl}` };
+    return { novels: [], error: `[throw] ${err.message}${cause} url=${supabaseUrl}` };
   }
 }
 
