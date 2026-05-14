@@ -23,8 +23,12 @@ async function getNovels(): Promise<{ novels: Novel[]; error: string | null }> {
     }
     return { novels: (data as Novel[]) || [], error: null };
   } catch (e) {
-    console.error('getNovels failed:', e);
-    return { novels: [], error: `${(e as Error).message} (${supabaseUrl})` };
+    const err = e as Error & { cause?: { code?: string; message?: string } };
+    console.error('getNovels failed:', err, 'cause:', err.cause);
+    const cause = err.cause
+      ? ` cause=${err.cause.code || err.cause.message || JSON.stringify(err.cause)}`
+      : '';
+    return { novels: [], error: `${err.message}${cause} url=${supabaseUrl}` };
   }
 }
 
