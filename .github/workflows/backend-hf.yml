@@ -20,6 +20,7 @@ jobs:
           mkdir -p _hf_space
           cp backend/Dockerfile.hf       _hf_space/Dockerfile
           cp backend/supervisord.conf    _hf_space/
+          cp backend/tomato-init.sh      _hf_space/
           cp backend/space-README.md     _hf_space/README.md
           cp backend/package.json        _hf_space/
           [ -f backend/package-lock.json ] && cp backend/package-lock.json _hf_space/ || true
