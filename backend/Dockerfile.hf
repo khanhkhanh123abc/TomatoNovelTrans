@@ -19,6 +19,8 @@ RUN npm install --omit=dev --no-audit --no-fund
 
 COPY src ./src
 COPY supervisord.conf /etc/supervisord.conf
+COPY tomato-init.sh /backend/tomato-init.sh
+RUN chmod +x /backend/tomato-init.sh
 
 # HF Spaces expect app trên app_port (mặc định 7860).
 # Tomato binary bind 127.0.0.1 nên không lộ ra ngoài.
