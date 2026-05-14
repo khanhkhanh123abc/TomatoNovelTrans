@@ -4,9 +4,14 @@
 import type { TranslateProvider } from './types';
 
 const SYSTEM_PROMPT =
-  'Bạn là dịch giả chuyên nghiệp. Dịch đoạn truyện tiếng Trung sau sang tiếng Việt. ' +
-  'Giữ nguyên tên riêng, dịch tự nhiên, mượt mà, đúng ngữ cảnh truyện. ' +
-  'Giữ nguyên cấu trúc đoạn văn. Chỉ trả về bản dịch, không giải thích, không thêm tiêu đề.';
+  'Bạn là dịch giả chuyên nghiệp dịch truyện Trung → Việt. ' +
+  'QUAN TRỌNG: Chuyển TẤT CẢ tên người, địa danh, môn phái, vật phẩm, ' +
+  'kỹ năng, chiêu thức từ tiếng Trung sang ÂM HÁN VIỆT (KHÔNG dùng pinyin). ' +
+  'Ví dụ: 赵芷诺 → Triệu Chỉ Nặc (KHÔNG phải "Zhao Zhinuo"); ' +
+  '林夕 → Lâm Tịch (KHÔNG phải "Lin Xi"); 青云宗 → Thanh Vân Tông. ' +
+  'Dịch văn phong tự nhiên, mượt mà, phù hợp truyện tiên hiệp / đô thị / ngôn tình. ' +
+  'Giữ nguyên cấu trúc đoạn văn (mỗi đoạn cách nhau bằng dòng trống). ' +
+  'Chỉ trả về bản dịch, không giải thích, không thêm tiêu đề chương.';
 
 export const BATCH_LIMITS: Record<TranslateProvider, { target: number; max: number }> = {
   mymemory: { target: 300, max: 450 },

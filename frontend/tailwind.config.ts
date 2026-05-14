@@ -6,7 +6,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        reader: ['Noto Serif', 'Georgia', 'serif'],
+        sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
+        reader: ['var(--font-reader)', 'Georgia', 'serif'],
       },
     },
   },
