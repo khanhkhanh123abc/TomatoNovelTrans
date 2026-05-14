@@ -5,19 +5,20 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { buildBatches, PROVIDER_DELAY } from '@/lib/translate';
-import type { Novel, ChapterMeta, TranslateProvider } from '@/lib/types';
+import type { Novel, ChapterMeta } from '@/lib/types';
+import SettingsModal from '@/app/components/SettingsModal';
+import {
+  loadSettings,
+  saveSettings,
+  getProviderOverrides,
+  DEFAULT_SETTINGS,
+  type ClientSettings,
+} from '@/lib/client-settings';
 
 type Props = {
   novel: Novel;
   chapters: ChapterMeta[];
 };
-
-const PROVIDERS: { v: TranslateProvider; label: string }[] = [
-  { v: 'gemini', label: 'Gemini' },
-  { v: 'deepseek', label: 'DeepSeek' },
-  { v: 'qwen', label: 'Qwen' },
-  { v: 'mymemory', label: 'MyMemory' },
-];
 
 export default function Reader({ novel, chapters }: Props) {
   const router = useRouter();
@@ -32,8 +33,19 @@ export default function Reader({ novel, chapters }: Props) {
   // Trạng thái dịch
   const [translating, setTranslating] = useState<{ progress: number } | null>(null);
   const [showOriginal, setShowOriginal] = useState(false);
-  const [provider, setProvider] = useState<TranslateProvider>('gemini');
+  const [settings, setSettings] = useState<ClientSettings>(DEFAULT_SETTINGS);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string>('');
+
+  // Load settings từ localStorage sau khi mount (tránh SSR mismatch).
+  useEffect(() => {
+    setSettings(loadSettings());
+  }, []);
+
+  const handleSaveSettings = (s: ClientSettings) => {
+    setSettings(s);
+    saveSettings(s);
+  };
 
   const abortRef = useRef<AbortController | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -81,6 +93,8 @@ export default function Reader({ novel, chapters }: Props) {
   const startTranslate = useCallback(async () => {
     if (!current || !originalContent) return;
 
+    const provider = settings.provider;
+    const overrides = getProviderOverrides(settings);
     const batches = buildBatches(blocks, provider);
     if (!batches.length) return;
 
@@ -98,7 +112,7 @@ export default function Reader({ novel, chapters }: Props) {
         const res = await fetch('/api/translate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text, provider }),
+          body: JSON.stringify({ text, provider, ...overrides }),
           signal: controller.signal,
         });
         const data = await res.json();
@@ -135,7 +149,7 @@ export default function Reader({ novel, chapters }: Props) {
       setTranslating(null);
       abortRef.current = null;
     }
-  }, [current, originalContent, blocks, provider, router]);
+  }, [current, originalContent, blocks, settings, router]);
 
   const stopTranslate = () => abortRef.current?.abort();
 
@@ -176,18 +190,15 @@ export default function Reader({ novel, chapters }: Props) {
           ← Kho
         </Link>
         <h1 className="flex-1 truncate font-semibold">{novel.title}</h1>
-        <select
-          value={provider}
-          onChange={(e) => setProvider(e.target.value as TranslateProvider)}
+        <span className="text-xs text-slate-400 hidden sm:inline">{settings.provider}</span>
+        <button
+          onClick={() => setSettingsOpen(true)}
           disabled={!!translating}
-          className="px-2 py-1.5 bg-slate-800 border border-slate-700 rounded text-sm"
+          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-sm disabled:opacity-50"
+          title="Cài đặt API key"
         >
-          {PROVIDERS.map((p) => (
-            <option key={p.v} value={p.v}>
-              {p.label}
-            </option>
-          ))}
-        </select>
+          ⚙️
+        </button>
       </header>
 
       <div className="flex-1 flex overflow-hidden">
@@ -322,6 +333,13 @@ export default function Reader({ novel, chapters }: Props) {
           </div>
         </main>
       </div>
+
+      <SettingsModal
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        settings={settings}
+        onSave={handleSaveSettings}
+      />
     </div>
   );
 }

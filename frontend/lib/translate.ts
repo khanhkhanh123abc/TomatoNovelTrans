@@ -22,9 +22,8 @@ export const PROVIDER_DELAY: Record<TranslateProvider, number> = {
   qwen: 200,
 };
 
-async function callMyMemory(text: string, signal?: AbortSignal): Promise<string> {
+async function callMyMemory(text: string, email: string | undefined, signal?: AbortSignal): Promise<string> {
   const params = new URLSearchParams({ q: text, langpair: 'zh-CN|vi' });
-  const email = process.env.MYMEMORY_EMAIL;
   if (email) params.set('de', email);
   const res = await fetch(`https://api.mymemory.translated.net/get?${params}`, { signal });
   if (!res.ok) throw new Error(`MyMemory HTTP ${res.status}`);
@@ -94,23 +93,30 @@ async function callGemini(
   return parts.map((p: { text?: string }) => p.text || '').join('').trim();
 }
 
+export type TranslateOverrides = {
+  apiKey?: string;
+  geminiModel?: string;
+  mymemoryEmail?: string;
+};
+
 export async function translateOnce(
   provider: TranslateProvider,
   text: string,
+  overrides: TranslateOverrides = {},
   signal?: AbortSignal
 ): Promise<string> {
   switch (provider) {
     case 'mymemory':
-      return callMyMemory(text, signal);
+      return callMyMemory(text, overrides.mymemoryEmail || process.env.MYMEMORY_EMAIL, signal);
     case 'gemini': {
-      const key = process.env.GEMINI_API_KEY;
-      if (!key) throw new Error('GEMINI_API_KEY chưa cấu hình');
-      const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+      const key = overrides.apiKey || process.env.GEMINI_API_KEY;
+      if (!key) throw new Error('Chưa có Gemini API key (mở ⚙️ Cài đặt để nhập)');
+      const model = overrides.geminiModel || process.env.GEMINI_MODEL || 'gemini-2.5-flash';
       return callGemini(model, key, text, signal);
     }
     case 'deepseek': {
-      const key = process.env.DEEPSEEK_API_KEY;
-      if (!key) throw new Error('DEEPSEEK_API_KEY chưa cấu hình');
+      const key = overrides.apiKey || process.env.DEEPSEEK_API_KEY;
+      if (!key) throw new Error('Chưa có DeepSeek API key (mở ⚙️ Cài đặt để nhập)');
       return callOpenAILike(
         'https://api.deepseek.com/v1/chat/completions',
         key,
@@ -120,8 +126,8 @@ export async function translateOnce(
       );
     }
     case 'qwen': {
-      const key = process.env.QWEN_API_KEY;
-      if (!key) throw new Error('QWEN_API_KEY chưa cấu hình');
+      const key = overrides.apiKey || process.env.QWEN_API_KEY;
+      if (!key) throw new Error('Chưa có Qwen API key (mở ⚙️ Cài đặt để nhập)');
       return callOpenAILike(
         'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions',
         key,
@@ -139,13 +145,14 @@ export async function translateOnce(
 export async function translateWithRetry(
   provider: TranslateProvider,
   text: string,
+  overrides: TranslateOverrides = {},
   signal?: AbortSignal
 ): Promise<string> {
   let lastErr: unknown;
   for (let attempt = 0; attempt < 3; attempt++) {
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     try {
-      return await translateOnce(provider, text, signal);
+      return await translateOnce(provider, text, overrides, signal);
     } catch (e) {
       if ((e as Error).name === 'AbortError') throw e;
       lastErr = e;
