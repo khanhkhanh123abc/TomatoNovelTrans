@@ -32,6 +32,8 @@ Thumbs.db
 
 # Tomato downloader data
 backend/tomato-data/
+backend/ds2api-config.json
+backend/config.json
 
 # Misc
 *.pem

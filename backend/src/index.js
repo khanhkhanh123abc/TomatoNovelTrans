@@ -25,6 +25,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/search', requireApiKey, require('./routes/search'));
 app.use('/api/novels', requireApiKey, require('./routes/novels'));
 app.use('/api/sync', requireApiKey, require('./routes/sync'));
+app.use('/api/ds2api', requireApiKey, require('./routes/ds2api'));
 
 // Error handler
 app.use((err, req, res, next) => {

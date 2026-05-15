@@ -1,0 +1,26 @@
+{
+  "keys": ["novel-ds2api-key"],
+  "api_keys": [
+    {
+      "key": "novel-ds2api-key",
+      "name": "Novel translator",
+      "remark": "Use this value as DEEPSEEK_API_KEY in the frontend"
+    }
+  ],
+  "accounts": [
+    {
+      "name": "DeepSeek account",
+      "email": "your-deepseek-email@example.com",
+      "password": "your-deepseek-password"
+    }
+  ],
+  "model_aliases": {
+    "deepseek-chat": "deepseek-v4-flash"
+  },
+  "runtime": {
+    "account_max_inflight": 2,
+    "account_max_queue": 0,
+    "global_max_inflight": 0,
+    "token_refresh_interval_hours": 6
+  }
+}

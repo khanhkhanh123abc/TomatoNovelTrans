@@ -18,5 +18,7 @@ module.exports = {
   TOMATO_PASSWORD: process.env.TOMATO_PASSWORD || process.env.TOMATO_WEB_PASSWORD || '',
   TOMATO_DOWNLOAD_DIR: process.env.TOMATO_DOWNLOAD_DIR || '/data',
 
+  DS2API_BASE_URL: process.env.DS2API_BASE_URL || 'http://127.0.0.1:5001',
+
   CRON_SCHEDULE: process.env.CRON_SCHEDULE ?? '0 */8 * * *',
 };

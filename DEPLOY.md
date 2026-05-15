@@ -33,11 +33,23 @@ Workflow ở `.github/workflows/`:
 | `SUPABASE_SERVICE_KEY` | service-role key |
 | `API_SECRET_KEY` | random string dài — frontend Vercel dùng làm `x-api-key` |
 | `TOMATO_WEB_PASSWORD` | optional, bảo vệ Tomato WebUI nội bộ |
+| `DS2API_CONFIG_JSON` | optional, JSON/Base64 config từ `backend/ds2api-config.example.json` |
+| `DS2API_ADMIN_KEY` | optional, admin key nội bộ |
 | `CRON_SCHEDULE` | optional, mặc định `0 */8 * * *` |
 
 ### 1.2. Token HF cho GitHub Actions
 
 Vào https://huggingface.co/settings/tokens → **New token** → name "github-actions" → **Write** access → Generate → copy token.
+
+### 1.3. DS2API nội bộ
+
+Nếu muốn dịch qua DS2API trong cùng HF Space:
+
+1. Copy `backend/ds2api-config.example.json` ra file riêng ngoài repo.
+2. Đổi `keys[0]` thành một key bạn tự đặt, ví dụ `novel-ds2api-...`.
+3. Điền DeepSeek `accounts` của bạn.
+4. Nén JSON thành một dòng hoặc base64 rồi lưu vào HF secret `DS2API_CONFIG_JSON`.
+5. Trên Vercel đặt `DEEPSEEK_API_KEY` bằng key ở bước 2, để `DEEPSEEK_BASE_URL` trống.
 
 ---
 
@@ -89,7 +101,9 @@ Verify: `curl https://<HF_USERNAME>-<HF_SPACE_NAME>.hf.space/api/health` → `{"
 | `AZURE_API_SECRET_KEY` | giống `API_SECRET_KEY` ở HF Space |
 | `GEMINI_API_KEY` | aistudio.google.com/apikey |
 | `GEMINI_MODEL` | `gemini-2.5-flash` |
-| `DEEPSEEK_API_KEY` | optional |
+| `DEEPSEEK_API_KEY` | key trong `DS2API_CONFIG_JSON.keys` nếu dùng DS2API nội bộ |
+| `DEEPSEEK_BASE_URL` | optional; để trống sẽ tự dùng `${AZURE_BACKEND_URL}/api/ds2api` |
+| `DEEPSEEK_MODEL` | optional, mặc định `deepseek-chat` |
 | `QWEN_API_KEY` | optional |
 | `MYMEMORY_EMAIL` | optional |
 

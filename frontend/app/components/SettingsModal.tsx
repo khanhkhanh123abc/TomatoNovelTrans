@@ -144,7 +144,7 @@ export default function SettingsModal({ open, onClose, settings, onSave }: Props
                   type="url"
                   value={local.deepseekBaseUrl}
                   onChange={(e) => setLocal({ ...local, deepseekBaseUrl: e.target.value })}
-                  placeholder="https://api.deepseek.com hoặc http://127.0.0.1:5001"
+                  placeholder="Để trống = backend /api/ds2api"
                   className={inputCls}
                 />
               </label>

@@ -6,11 +6,15 @@
 # Base image `zhongbai233/tomato-novel-downloader-webui:latest` là Alpine 3.20
 # (musl variant) → dùng apk add. Node 20 có sẵn trong Alpine 3.20.
 
+FROM ghcr.io/cjackhwang/ds2api:latest AS ds2api
+
 FROM zhongbai233/tomato-novel-downloader-webui:latest
 
 USER root
 
-RUN apk add --no-cache nodejs npm supervisor
+RUN apk add --no-cache nodejs npm supervisor ca-certificates
+
+COPY --from=ds2api /usr/local/bin/ds2api /usr/local/bin/ds2api
 
 WORKDIR /backend
 
@@ -29,9 +33,12 @@ ENV PORT=7860 \
     TOMATO_API_URL=http://127.0.0.1:18423 \
     TOMATO_WEB_ADDR=127.0.0.1:18423 \
     TOMATO_DATA_DIR=/data \
-    TOMATO_DOWNLOAD_DIR=/data
+    TOMATO_DOWNLOAD_DIR=/data \
+    DS2API_BASE_URL=http://127.0.0.1:5001 \
+    DS2API_CONFIG_PATH=/data/ds2api/config.json \
+    DS2API_ADMIN_KEY=internal-only
 
-RUN mkdir -p /data && chmod 777 /data
+RUN mkdir -p /data /data/ds2api && chmod 777 /data /data/ds2api
 
 EXPOSE 7860
 

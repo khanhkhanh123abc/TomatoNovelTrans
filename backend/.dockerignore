@@ -3,5 +3,7 @@ npm-debug.log
 .env
 .env.*
 tomato-data
+ds2api-config.json
+config.json
 *.log
 .git

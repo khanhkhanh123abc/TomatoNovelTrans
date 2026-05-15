@@ -44,12 +44,17 @@ async function callOpenAILike(
   key: string,
   model: string,
   text: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  extraHeaders: Record<string, string> = {}
 ): Promise<string> {
   const res = await fetch(url, {
     method: 'POST',
     signal,
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    headers: {
+      ...extraHeaders,
+      Authorization: `Bearer ${key}`,
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({
       model,
       messages: [
@@ -113,6 +118,23 @@ function toChatCompletionsUrl(baseUrl: string): string {
   return `${trimmed}/v1/chat/completions`;
 }
 
+function backendDs2apiBaseUrl(): string | undefined {
+  const backend = process.env.AZURE_BACKEND_URL?.trim();
+  return backend ? `${backend.replace(/\/+$/, '')}/api/ds2api` : undefined;
+}
+
+function deepseekProxyHeaders(baseUrl: string): Record<string, string> {
+  const explicit = process.env.DEEPSEEK_PROXY_API_KEY?.trim();
+  if (explicit) return { 'x-api-key': explicit };
+
+  const backend = process.env.AZURE_BACKEND_URL?.trim().replace(/\/+$/, '');
+  const backendKey = process.env.AZURE_API_SECRET_KEY?.trim();
+  if (backend && backendKey && baseUrl.replace(/\/+$/, '').startsWith(`${backend}/api/ds2api`)) {
+    return { 'x-api-key': backendKey };
+  }
+  return {};
+}
+
 export async function translateOnce(
   provider: TranslateProvider,
   text: string,
@@ -132,9 +154,19 @@ export async function translateOnce(
       const key = overrides.apiKey || process.env.DEEPSEEK_API_KEY;
       if (!key) throw new Error('Chưa có DeepSeek API key (mở ⚙️ Cài đặt để nhập)');
       const baseUrl =
-        overrides.deepseekBaseUrl || process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com';
+        overrides.deepseekBaseUrl ||
+        process.env.DEEPSEEK_BASE_URL ||
+        backendDs2apiBaseUrl() ||
+        'https://api.deepseek.com';
       const model = overrides.deepseekModel || process.env.DEEPSEEK_MODEL || 'deepseek-chat';
-      return callOpenAILike(toChatCompletionsUrl(baseUrl), key, model, text, signal);
+      return callOpenAILike(
+        toChatCompletionsUrl(baseUrl),
+        key,
+        model,
+        text,
+        signal,
+        deepseekProxyHeaders(baseUrl)
+      );
     }
     case 'qwen': {
       const key = overrides.apiKey || process.env.QWEN_API_KEY;
