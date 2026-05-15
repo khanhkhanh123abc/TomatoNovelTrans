@@ -101,8 +101,17 @@ async function callGemini(
 export type TranslateOverrides = {
   apiKey?: string;
   geminiModel?: string;
+  deepseekBaseUrl?: string;
+  deepseekModel?: string;
   mymemoryEmail?: string;
 };
+
+function toChatCompletionsUrl(baseUrl: string): string {
+  const trimmed = baseUrl.trim().replace(/\/+$/, '');
+  if (trimmed.endsWith('/chat/completions')) return trimmed;
+  if (trimmed.endsWith('/v1')) return `${trimmed}/chat/completions`;
+  return `${trimmed}/v1/chat/completions`;
+}
 
 export async function translateOnce(
   provider: TranslateProvider,
@@ -122,13 +131,10 @@ export async function translateOnce(
     case 'deepseek': {
       const key = overrides.apiKey || process.env.DEEPSEEK_API_KEY;
       if (!key) throw new Error('Chưa có DeepSeek API key (mở ⚙️ Cài đặt để nhập)');
-      return callOpenAILike(
-        'https://api.deepseek.com/v1/chat/completions',
-        key,
-        'deepseek-chat',
-        text,
-        signal
-      );
+      const baseUrl =
+        overrides.deepseekBaseUrl || process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com';
+      const model = overrides.deepseekModel || process.env.DEEPSEEK_MODEL || 'deepseek-chat';
+      return callOpenAILike(toChatCompletionsUrl(baseUrl), key, model, text, signal);
     }
     case 'qwen': {
       const key = overrides.apiKey || process.env.QWEN_API_KEY;

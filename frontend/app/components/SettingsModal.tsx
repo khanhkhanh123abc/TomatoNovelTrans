@@ -14,7 +14,7 @@ type Props = {
 
 const PROVIDERS: { v: TranslateProvider; label: string; help: string }[] = [
   { v: 'gemini', label: 'Gemini (Google)', help: 'Free tier rộng rãi. Lấy key tại aistudio.google.com/apikey' },
-  { v: 'deepseek', label: 'DeepSeek', help: 'platform.deepseek.com' },
+  { v: 'deepseek', label: 'DeepSeek / ds2api', help: 'Official API hoặc ds2api OpenAI-compatible' },
   { v: 'qwen', label: 'Qwen (Alibaba)', help: 'dashscope-intl.aliyuncs.com' },
   { v: 'mymemory', label: 'MyMemory', help: 'Free, không cần key. Email tăng quota (optional)' },
 ];
@@ -127,16 +127,38 @@ export default function SettingsModal({ open, onClose, settings, onSave }: Props
           )}
 
           {local.provider === 'deepseek' && (
-            <label className="block">
-              <span className="block text-sm text-slate-300 mb-1.5">DeepSeek API Key</span>
-              <input
-                type={showKey ? 'text' : 'password'}
-                value={local.deepseekKey}
-                onChange={(e) => setLocal({ ...local, deepseekKey: e.target.value })}
-                placeholder="sk-..."
-                className={inputCls}
-              />
-            </label>
+            <div className="space-y-3">
+              <label className="block">
+                <span className="block text-sm text-slate-300 mb-1.5">DeepSeek / ds2api API Key</span>
+                <input
+                  type={showKey ? 'text' : 'password'}
+                  value={local.deepseekKey}
+                  onChange={(e) => setLocal({ ...local, deepseekKey: e.target.value })}
+                  placeholder="sk-... hoặc key cấu hình trong ds2api"
+                  className={inputCls}
+                />
+              </label>
+              <label className="block">
+                <span className="block text-sm text-slate-300 mb-1.5">Base URL</span>
+                <input
+                  type="url"
+                  value={local.deepseekBaseUrl}
+                  onChange={(e) => setLocal({ ...local, deepseekBaseUrl: e.target.value })}
+                  placeholder="https://api.deepseek.com hoặc http://127.0.0.1:5001"
+                  className={inputCls}
+                />
+              </label>
+              <label className="block">
+                <span className="block text-sm text-slate-300 mb-1.5">Model</span>
+                <input
+                  type="text"
+                  value={local.deepseekModel}
+                  onChange={(e) => setLocal({ ...local, deepseekModel: e.target.value })}
+                  placeholder="deepseek-chat"
+                  className={inputCls}
+                />
+              </label>
+            </div>
           )}
 
           {local.provider === 'qwen' && (
@@ -174,6 +196,8 @@ export default function SettingsModal({ open, onClose, settings, onSave }: Props
                   geminiKey: DEFAULT_SETTINGS.geminiKey,
                   geminiModel: DEFAULT_SETTINGS.geminiModel,
                   deepseekKey: DEFAULT_SETTINGS.deepseekKey,
+                  deepseekBaseUrl: DEFAULT_SETTINGS.deepseekBaseUrl,
+                  deepseekModel: DEFAULT_SETTINGS.deepseekModel,
                   qwenKey: DEFAULT_SETTINGS.qwenKey,
                   mymemoryEmail: DEFAULT_SETTINGS.mymemoryEmail,
                 })

@@ -54,6 +54,8 @@ Env vars cần khai báo trong Vercel dashboard (Production):
 | `GEMINI_API_KEY` | aistudio.google.com/apikey |
 | `GEMINI_MODEL` | `gemini-2.5-flash` (mặc định) |
 | `DEEPSEEK_API_KEY` | tuỳ chọn |
+| `DEEPSEEK_BASE_URL` | tuỳ chọn, dùng official DeepSeek hoặc ds2api endpoint |
+| `DEEPSEEK_MODEL` | `deepseek-chat` hoặc model ds2api |
 | `QWEN_API_KEY` | tuỳ chọn |
 | `MYMEMORY_EMAIL` | tuỳ chọn, tăng quota free |
 

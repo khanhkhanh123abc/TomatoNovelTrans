@@ -11,6 +11,8 @@ export async function POST(req: Request) {
       provider?: TranslateProvider;
       apiKey?: string;
       geminiModel?: string;
+      deepseekBaseUrl?: string;
+      deepseekModel?: string;
       mymemoryEmail?: string;
     };
     if (!body.text) return NextResponse.json({ error: 'text required' }, { status: 400 });
@@ -21,6 +23,8 @@ export async function POST(req: Request) {
       {
         apiKey: body.apiKey,
         geminiModel: body.geminiModel,
+        deepseekBaseUrl: body.deepseekBaseUrl,
+        deepseekModel: body.deepseekModel,
         mymemoryEmail: body.mymemoryEmail,
       },
       req.signal

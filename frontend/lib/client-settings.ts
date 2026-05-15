@@ -10,6 +10,8 @@ export type ClientSettings = {
   geminiKey: string;
   geminiModel: string;
   deepseekKey: string;
+  deepseekBaseUrl: string;
+  deepseekModel: string;
   qwenKey: string;
   mymemoryEmail: string;
   readerBackground: ReaderBackground;
@@ -25,6 +27,8 @@ export const DEFAULT_SETTINGS: ClientSettings = {
   geminiKey: '',
   geminiModel: 'gemini-2.5-flash',
   deepseekKey: '',
+  deepseekBaseUrl: '',
+  deepseekModel: 'deepseek-chat',
   qwenKey: '',
   mymemoryEmail: '',
   readerBackground: 'dark',
@@ -54,6 +58,8 @@ export function saveSettings(s: ClientSettings) {
 export function getProviderOverrides(s: ClientSettings): {
   apiKey?: string;
   geminiModel?: string;
+  deepseekBaseUrl?: string;
+  deepseekModel?: string;
   mymemoryEmail?: string;
 } {
   switch (s.provider) {
@@ -63,7 +69,11 @@ export function getProviderOverrides(s: ClientSettings): {
         geminiModel: s.geminiModel.trim() || undefined,
       };
     case 'deepseek':
-      return { apiKey: s.deepseekKey.trim() || undefined };
+      return {
+        apiKey: s.deepseekKey.trim() || undefined,
+        deepseekBaseUrl: s.deepseekBaseUrl.trim() || undefined,
+        deepseekModel: s.deepseekModel.trim() || undefined,
+      };
     case 'qwen':
       return { apiKey: s.qwenKey.trim() || undefined };
     case 'mymemory':
