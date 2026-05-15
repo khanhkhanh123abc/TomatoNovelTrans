@@ -7,6 +7,8 @@ import type { Novel } from '@/lib/types';
 // Render ở request time để env vars Vercel có sẵn; tránh build fail khi
 // NEXT_PUBLIC_SUPABASE_* chưa cấu hình.
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 async function getNovels(): Promise<{ novels: Novel[]; error: string | null }> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || 'missing NEXT_PUBLIC_SUPABASE_URL';
@@ -15,8 +17,8 @@ async function getNovels(): Promise<{ novels: Novel[]; error: string | null }> {
     const { data, error } = await supa
       .from('novels')
       .select('*')
-      .eq('status', 'active')
-      .order('last_updated_at', { ascending: false });
+      .order('last_updated_at', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false, nullsFirst: false });
     if (error) {
       const e = error as { message: string; cause?: { code?: string; message?: string }; details?: string };
       console.error('Supabase returned error:', e);
