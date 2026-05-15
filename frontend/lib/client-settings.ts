@@ -2,6 +2,9 @@
 
 import type { TranslateProvider } from './types';
 
+export type ReaderBackground = 'dark' | 'black' | 'paper' | 'sepia' | 'green';
+export type ReaderFontFamily = 'serif' | 'sans' | 'system' | 'mono';
+
 export type ClientSettings = {
   provider: TranslateProvider;
   geminiKey: string;
@@ -9,6 +12,10 @@ export type ClientSettings = {
   deepseekKey: string;
   qwenKey: string;
   mymemoryEmail: string;
+  readerBackground: ReaderBackground;
+  readerFontSize: number;
+  readerLineHeight: number;
+  readerFontFamily: ReaderFontFamily;
 };
 
 const LS_KEY = 'epub_trans_client_settings';
@@ -20,6 +27,10 @@ export const DEFAULT_SETTINGS: ClientSettings = {
   deepseekKey: '',
   qwenKey: '',
   mymemoryEmail: '',
+  readerBackground: 'dark',
+  readerFontSize: 18,
+  readerLineHeight: 1.85,
+  readerFontFamily: 'serif',
 };
 
 export function loadSettings(): ClientSettings {

@@ -13,12 +13,87 @@ import {
   getProviderOverrides,
   DEFAULT_SETTINGS,
   type ClientSettings,
+  type ReaderBackground,
+  type ReaderFontFamily,
 } from '@/lib/client-settings';
 
 type Props = {
   novel: Novel;
   chapters: ChapterMeta[];
 };
+
+type ChapterOrder = 'asc' | 'desc';
+
+const READER_BACKGROUNDS: {
+  value: ReaderBackground;
+  label: string;
+  bg: string;
+  text: string;
+  heading: string;
+  muted: string;
+  swatch: string;
+}[] = [
+  {
+    value: 'dark',
+    label: 'Tối',
+    bg: 'rgb(15 23 42)',
+    text: 'rgb(226 232 240)',
+    heading: 'rgb(248 250 252)',
+    muted: 'rgb(148 163 184)',
+    swatch: '#0f172a',
+  },
+  {
+    value: 'black',
+    label: 'Đen',
+    bg: 'rgb(3 7 18)',
+    text: 'rgb(229 231 235)',
+    heading: 'rgb(249 250 251)',
+    muted: 'rgb(156 163 175)',
+    swatch: '#030712',
+  },
+  {
+    value: 'paper',
+    label: 'Giấy',
+    bg: 'rgb(250 247 238)',
+    text: 'rgb(39 39 42)',
+    heading: 'rgb(24 24 27)',
+    muted: 'rgb(113 113 122)',
+    swatch: '#faf7ee',
+  },
+  {
+    value: 'sepia',
+    label: 'Sepia',
+    bg: 'rgb(239 229 207)',
+    text: 'rgb(68 49 28)',
+    heading: 'rgb(46 34 19)',
+    muted: 'rgb(120 92 61)',
+    swatch: '#efe5cf',
+  },
+  {
+    value: 'green',
+    label: 'Xanh',
+    bg: 'rgb(221 232 218)',
+    text: 'rgb(31 49 42)',
+    heading: 'rgb(21 38 32)',
+    muted: 'rgb(82 107 94)',
+    swatch: '#dde8da',
+  },
+];
+
+const READER_FONTS: { value: ReaderFontFamily; label: string; css: string }[] = [
+  { value: 'serif', label: 'Serif', css: 'var(--font-reader), Georgia, serif' },
+  { value: 'sans', label: 'Sans', css: 'var(--font-sans), Inter, system-ui, sans-serif' },
+  {
+    value: 'system',
+    label: 'System',
+    css: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  },
+  {
+    value: 'mono',
+    label: 'Mono',
+    css: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+  },
+];
 
 export default function Reader({ novel, chapters }: Props) {
   const router = useRouter();
@@ -35,6 +110,8 @@ export default function Reader({ novel, chapters }: Props) {
   const [showOriginal, setShowOriginal] = useState(false);
   const [settings, setSettings] = useState<ClientSettings>(DEFAULT_SETTINGS);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [readerControlsOpen, setReaderControlsOpen] = useState(false);
+  const [chapterOrder, setChapterOrder] = useState<ChapterOrder>('asc');
   const [syncStatus, setSyncStatus] = useState<string>('');
 
   // Load settings từ localStorage sau khi mount (tránh SSR mismatch).
@@ -47,10 +124,21 @@ export default function Reader({ novel, chapters }: Props) {
     saveSettings(s);
   };
 
+  const updateSettings = (patch: Partial<ClientSettings>) => {
+    handleSaveSettings({ ...settings, ...patch });
+  };
+
   const abortRef = useRef<AbortController | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
   const current = chapters[selectedIdx];
+  const readerTheme =
+    READER_BACKGROUNDS.find((b) => b.value === settings.readerBackground) || READER_BACKGROUNDS[0];
+  const readerFont = READER_FONTS.find((f) => f.value === settings.readerFontFamily) || READER_FONTS[0];
+  const orderedChapters = useMemo(() => {
+    const items = chapters.map((chapter, index) => ({ chapter, index }));
+    return chapterOrder === 'asc' ? items : [...items].reverse();
+  }, [chapters, chapterOrder]);
 
   // Load nội dung chương khi chọn
   useEffect(() => {
@@ -216,6 +304,30 @@ export default function Reader({ novel, chapters }: Props) {
               <span className="text-sm font-semibold">Mục lục</span>
               <span className="text-xs text-slate-500">{chapters.length} chương</span>
             </div>
+            <div className="grid grid-cols-2 gap-1 rounded-lg bg-slate-950/60 p-1">
+              <button
+                type="button"
+                onClick={() => setChapterOrder('asc')}
+                className={`rounded-md px-2 py-1.5 text-xs transition-colors ${
+                  chapterOrder === 'asc'
+                    ? 'bg-slate-700 text-slate-100'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Đầu → cuối
+              </button>
+              <button
+                type="button"
+                onClick={() => setChapterOrder('desc')}
+                className={`rounded-md px-2 py-1.5 text-xs transition-colors ${
+                  chapterOrder === 'desc'
+                    ? 'bg-slate-700 text-slate-100'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Cuối → đầu
+              </button>
+            </div>
             <button
               onClick={checkUpdates}
               className="w-full px-3 py-2 text-sm bg-slate-800 hover:bg-slate-700 rounded-lg"
@@ -224,14 +336,14 @@ export default function Reader({ novel, chapters }: Props) {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
-            {chapters.map((ch, i) => {
-              const isSelected = i === selectedIdx;
+            {orderedChapters.map(({ chapter: ch, index }) => {
+              const isSelected = index === selectedIdx;
               const isTranslated = translatedSet.has(ch.id);
               return (
                 <button
                   key={ch.id}
                   onClick={() => {
-                    setSelectedIdx(i);
+                    setSelectedIdx(index);
                     setSidebarOpen(false);
                   }}
                   className={`w-full text-left px-3 py-2.5 border-b border-slate-800/60 flex items-start gap-2 ${
@@ -240,7 +352,7 @@ export default function Reader({ novel, chapters }: Props) {
                       : 'text-slate-300 hover:bg-slate-800/70'
                   }`}
                 >
-                  <span className="text-xs text-slate-500 w-6 shrink-0 pt-0.5">{i + 1}</span>
+                  <span className="text-xs text-slate-500 w-6 shrink-0 pt-0.5">{index + 1}</span>
                   <span className="flex-1 text-sm leading-snug break-words">{ch.title}</span>
                   {isTranslated && <span className="text-emerald-400 shrink-0">✓</span>}
                 </button>
@@ -268,6 +380,113 @@ export default function Reader({ novel, chapters }: Props) {
               Sau ➡
             </button>
             <div className="flex-1" />
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setReaderControlsOpen((open) => !open)}
+                className="px-3 py-1.5 text-sm bg-slate-800 hover:bg-slate-700 rounded-lg"
+                title="Cài đặt hiển thị"
+                aria-label="Cài đặt hiển thị"
+              >
+                Aa
+              </button>
+              {readerControlsOpen && (
+                <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-slate-700 bg-slate-800 p-4 shadow-2xl z-40 space-y-4">
+                  <div>
+                    <div className="mb-2 text-xs font-medium uppercase text-slate-400">
+                      Nền đọc
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {READER_BACKGROUNDS.map((theme) => (
+                        <button
+                          key={theme.value}
+                          type="button"
+                          onClick={() => updateSettings({ readerBackground: theme.value })}
+                          className={`h-8 w-8 rounded-full border-2 ${
+                            settings.readerBackground === theme.value
+                              ? 'border-emerald-400'
+                              : 'border-slate-600'
+                          }`}
+                          style={{ background: theme.swatch }}
+                          title={theme.label}
+                          aria-label={theme.label}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <label className="block">
+                    <span className="mb-2 block text-xs font-medium uppercase text-slate-400">
+                      Kiểu chữ
+                    </span>
+                    <select
+                      value={settings.readerFontFamily}
+                      onChange={(e) =>
+                        updateSettings({ readerFontFamily: e.target.value as ReaderFontFamily })
+                      }
+                      className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none"
+                    >
+                      {READER_FONTS.map((font) => (
+                        <option key={font.value} value={font.value}>
+                          {font.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-2 flex items-center justify-between text-xs font-medium uppercase text-slate-400">
+                      <span>Cỡ chữ</span>
+                      <span className="normal-case text-slate-300">
+                        {settings.readerFontSize}px
+                      </span>
+                    </span>
+                    <input
+                      type="range"
+                      min={14}
+                      max={28}
+                      step={1}
+                      value={settings.readerFontSize}
+                      onChange={(e) => updateSettings({ readerFontSize: Number(e.target.value) })}
+                      className="w-full accent-emerald-500"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-2 flex items-center justify-between text-xs font-medium uppercase text-slate-400">
+                      <span>Giãn dòng</span>
+                      <span className="normal-case text-slate-300">
+                        {settings.readerLineHeight.toFixed(2)}
+                      </span>
+                    </span>
+                    <input
+                      type="range"
+                      min={1.4}
+                      max={2.4}
+                      step={0.05}
+                      value={settings.readerLineHeight}
+                      onChange={(e) => updateSettings({ readerLineHeight: Number(e.target.value) })}
+                      className="w-full accent-emerald-500"
+                    />
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateSettings({
+                        readerBackground: DEFAULT_SETTINGS.readerBackground,
+                        readerFontFamily: DEFAULT_SETTINGS.readerFontFamily,
+                        readerFontSize: DEFAULT_SETTINGS.readerFontSize,
+                        readerLineHeight: DEFAULT_SETTINGS.readerLineHeight,
+                      })
+                    }
+                    className="text-xs text-slate-400 hover:text-slate-200"
+                  >
+                    Mặc định
+                  </button>
+                </div>
+              )}
+            </div>
             {translatedContent && !translating && (
               <button
                 onClick={() => setShowOriginal((s) => !s)}
@@ -311,14 +530,25 @@ export default function Reader({ novel, chapters }: Props) {
           )}
 
           {/* Body */}
-          <div ref={contentRef} className="flex-1 overflow-y-auto">
-            <article className="max-w-3xl mx-auto px-4 md:px-8 py-8 font-reader text-[17px] leading-[1.85] reader">
-              <h2 className="text-2xl md:text-3xl font-bold text-slate-100 mb-6">
+          <div
+            ref={contentRef}
+            className="flex-1 overflow-y-auto"
+            style={{ background: readerTheme.bg, color: readerTheme.text }}
+          >
+            <article
+              className="max-w-3xl mx-auto px-4 md:px-8 py-8 reader"
+              style={{
+                fontFamily: readerFont.css,
+                fontSize: `${settings.readerFontSize}px`,
+                lineHeight: settings.readerLineHeight,
+              }}
+            >
+              <h2 className="text-2xl md:text-3xl font-bold mb-6" style={{ color: readerTheme.heading }}>
                 {current?.title || '—'}
               </h2>
 
               {loadingChapter ? (
-                <p className="text-slate-500">Đang tải nội dung…</p>
+                <p style={{ color: readerTheme.muted }}>Đang tải nội dung...</p>
               ) : showOriginal || !translatedContent ? (
                 originalContent.split(/\n{2,}/).map((p, i) => p.trim() && <p key={i}>{p.trim()}</p>)
               ) : (
@@ -326,7 +556,11 @@ export default function Reader({ novel, chapters }: Props) {
                   {translatedContent
                     .split(/\n{2,}/)
                     .map((p, i) => p.trim() && <p key={i} className="fade-in">{p.trim()}</p>)}
-                  {translating && <p className="text-slate-500 italic">▍ đang dịch tiếp...</p>}
+                  {translating && (
+                    <p className="italic" style={{ color: readerTheme.muted }}>
+                      ▍ đang dịch tiếp...
+                    </p>
+                  )}
                 </>
               )}
             </article>

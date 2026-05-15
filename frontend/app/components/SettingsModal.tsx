@@ -167,7 +167,17 @@ export default function SettingsModal({ open, onClose, settings, onSave }: Props
 
           <div className="pt-2 border-t border-slate-700">
             <button
-              onClick={() => setLocal(DEFAULT_SETTINGS)}
+              onClick={() =>
+                setLocal({
+                  ...local,
+                  provider: DEFAULT_SETTINGS.provider,
+                  geminiKey: DEFAULT_SETTINGS.geminiKey,
+                  geminiModel: DEFAULT_SETTINGS.geminiModel,
+                  deepseekKey: DEFAULT_SETTINGS.deepseekKey,
+                  qwenKey: DEFAULT_SETTINGS.qwenKey,
+                  mymemoryEmail: DEFAULT_SETTINGS.mymemoryEmail,
+                })
+              }
               className="text-xs text-slate-400 hover:text-rose-300"
             >
               Reset về mặc định
