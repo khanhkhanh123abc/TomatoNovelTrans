@@ -146,6 +146,11 @@ Muốn test cả Tomato local: chạy `docker run -p 18423:18423 -v $PWD/tomato-
 
 ## 7. Files trong repo phục vụ deploy
 
+Note: DS2API startup now forces `current_input_file.enabled=false`. If your
+existing HF secret `DS2API_CONFIG_JSON` does not include this field, redeploying
+the backend is enough; the wrapper patches `/data/ds2api/config.json` before
+DS2API starts.
+
 ```
 .github/workflows/
 ├── backend-hf.yml      # GitHub Actions: push backend/ → HF Space
@@ -157,6 +162,7 @@ backend/
 ├── docker-compose.yml  # dev local: 2 service tách biệt
 ├── docker-compose.prod.yml  # VM deploy: image GHCR (không dùng nếu host HF)
 ├── supervisord.conf    # config supervisord trong Dockerfile.hf
+├── ds2api-start.sh     # patches DS2API config before starting bridge
 ├── space-README.md     # README HF Space (workflow rename → README.md)
 └── ...
 ```

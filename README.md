@@ -61,6 +61,10 @@ Env vars cần khai báo trong Vercel dashboard (Production):
 
 API keys dịch nằm hoàn toàn server-side, không lộ về browser.
 
+DS2API startup disables `current_input_file` automatically, so DeepSeek batches
+are not uploaded as temporary files. This avoids bridge-side errors like
+`upload current user input file`.
+
 ---
 
 ## Flow tổng thể

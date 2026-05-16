@@ -17,6 +17,10 @@
   "model_aliases": {
     "deepseek-chat": "deepseek-v4-flash"
   },
+  "current_input_file": {
+    "enabled": false,
+    "min_chars": 2147483647
+  },
   "runtime": {
     "account_max_inflight": 2,
     "account_max_queue": 0,
