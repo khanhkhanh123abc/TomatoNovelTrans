@@ -53,7 +53,7 @@ config.current_input_file = {
     ? config.current_input_file
     : {}),
   enabled: false,
-  min_chars: 2147483647,
+  min_chars: 100000000,
 };
 
 fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
