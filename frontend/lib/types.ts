@@ -28,7 +28,7 @@ export type ChapterMeta = Pick<
   'id' | 'chapter_index' | 'title' | 'translated_content' | 'word_count'
 >;
 
-export type TranslateProvider = 'mymemory' | 'gemini' | 'deepseek' | 'qwen';
+export type TranslateProvider = 'mymemory' | 'gemini' | 'deepseek' | 'qwen' | 'openrouter';
 
 export type SearchResult = {
   book_id: string;

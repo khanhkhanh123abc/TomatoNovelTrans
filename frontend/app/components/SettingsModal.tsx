@@ -15,6 +15,7 @@ type Props = {
 const PROVIDERS: { v: TranslateProvider; label: string; help: string }[] = [
   { v: 'gemini', label: 'Gemini (Google)', help: 'Free tier rộng rãi. Lấy key tại aistudio.google.com/apikey' },
   { v: 'deepseek', label: 'DeepSeek / ds2api', help: 'Official API hoặc ds2api OpenAI-compatible' },
+  { v: 'openrouter', label: 'OpenRouter', help: 'OpenAI-compatible, dùng key từ openrouter.ai' },
   { v: 'qwen', label: 'Qwen (Alibaba)', help: 'dashscope-intl.aliyuncs.com' },
   { v: 'mymemory', label: 'MyMemory', help: 'Free, không cần key. Email tăng quota (optional)' },
 ];
@@ -161,6 +162,41 @@ export default function SettingsModal({ open, onClose, settings, onSave }: Props
             </div>
           )}
 
+          {local.provider === 'openrouter' && (
+            <div className="space-y-3">
+              <label className="block">
+                <span className="block text-sm text-slate-300 mb-1.5">OpenRouter API Key</span>
+                <input
+                  type={showKey ? 'text' : 'password'}
+                  value={local.openrouterKey}
+                  onChange={(e) => setLocal({ ...local, openrouterKey: e.target.value })}
+                  placeholder="sk-or-v1-..."
+                  className={inputCls}
+                />
+              </label>
+              <label className="block">
+                <span className="block text-sm text-slate-300 mb-1.5">Base URL</span>
+                <input
+                  type="url"
+                  value={local.openrouterBaseUrl}
+                  onChange={(e) => setLocal({ ...local, openrouterBaseUrl: e.target.value })}
+                  placeholder="Để trống = https://openrouter.ai/api"
+                  className={inputCls}
+                />
+              </label>
+              <label className="block">
+                <span className="block text-sm text-slate-300 mb-1.5">Model</span>
+                <input
+                  type="text"
+                  value={local.openrouterModel}
+                  onChange={(e) => setLocal({ ...local, openrouterModel: e.target.value })}
+                  placeholder="deepseek/deepseek-chat"
+                  className={inputCls}
+                />
+              </label>
+            </div>
+          )}
+
           {local.provider === 'qwen' && (
             <label className="block">
               <span className="block text-sm text-slate-300 mb-1.5">Qwen / DashScope API Key</span>
@@ -198,6 +234,9 @@ export default function SettingsModal({ open, onClose, settings, onSave }: Props
                   deepseekKey: DEFAULT_SETTINGS.deepseekKey,
                   deepseekBaseUrl: DEFAULT_SETTINGS.deepseekBaseUrl,
                   deepseekModel: DEFAULT_SETTINGS.deepseekModel,
+                  openrouterKey: DEFAULT_SETTINGS.openrouterKey,
+                  openrouterBaseUrl: DEFAULT_SETTINGS.openrouterBaseUrl,
+                  openrouterModel: DEFAULT_SETTINGS.openrouterModel,
                   qwenKey: DEFAULT_SETTINGS.qwenKey,
                   mymemoryEmail: DEFAULT_SETTINGS.mymemoryEmail,
                 })

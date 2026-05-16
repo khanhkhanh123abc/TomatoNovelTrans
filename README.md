@@ -56,6 +56,9 @@ Env vars cần khai báo trong Vercel dashboard (Production):
 | `DEEPSEEK_API_KEY` | key DeepSeek official hoặc key trong DS2API `keys` |
 | `DEEPSEEK_BASE_URL` | tuỳ chọn; để trống sẽ tự dùng `${AZURE_BACKEND_URL}/api/ds2api` |
 | `DEEPSEEK_MODEL` | `deepseek-chat` hoặc model DS2API |
+| `OPENROUTER_API_KEY` | optional, key OpenRouter |
+| `OPENROUTER_BASE_URL` | optional, mặc định `https://openrouter.ai/api` |
+| `OPENROUTER_MODEL` | optional, mặc định `deepseek/deepseek-chat` |
 | `QWEN_API_KEY` | tuỳ chọn |
 | `MYMEMORY_EMAIL` | tuỳ chọn, tăng quota free |
 

@@ -17,6 +17,7 @@ export const BATCH_LIMITS: Record<TranslateProvider, { target: number; max: numb
   mymemory: { target: 300, max: 450 },
   gemini: { target: 1200, max: 1800 },
   deepseek: { target: 1200, max: 1800 },
+  openrouter: { target: 1200, max: 1800 },
   qwen: { target: 1200, max: 1800 },
 };
 
@@ -24,6 +25,7 @@ export const PROVIDER_DELAY: Record<TranslateProvider, number> = {
   mymemory: 500,
   gemini: 500,
   deepseek: 200,
+  openrouter: 200,
   qwen: 200,
 };
 
@@ -108,6 +110,8 @@ export type TranslateOverrides = {
   geminiModel?: string;
   deepseekBaseUrl?: string;
   deepseekModel?: string;
+  openrouterBaseUrl?: string;
+  openrouterModel?: string;
   mymemoryEmail?: string;
 };
 
@@ -133,6 +137,19 @@ function deepseekProxyHeaders(baseUrl: string): Record<string, string> {
     return { 'x-api-key': backendKey };
   }
   return {};
+}
+
+function openrouterHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
+  const siteUrl =
+    process.env.OPENROUTER_SITE_URL?.trim() ||
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
+  const title = process.env.OPENROUTER_APP_TITLE?.trim() || 'EpubTrans';
+
+  if (siteUrl) headers['HTTP-Referer'] = siteUrl;
+  if (title) headers['X-OpenRouter-Title'] = title;
+  return headers;
 }
 
 export async function translateOnce(
@@ -166,6 +183,20 @@ export async function translateOnce(
         text,
         signal,
         deepseekProxyHeaders(baseUrl)
+      );
+    }
+    case 'openrouter': {
+      const key = overrides.apiKey || process.env.OPENROUTER_API_KEY;
+      if (!key) throw new Error('Chưa có OpenRouter API key (mở Cài đặt để nhập)');
+      const baseUrl = overrides.openrouterBaseUrl || process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api';
+      const model = overrides.openrouterModel || process.env.OPENROUTER_MODEL || 'deepseek/deepseek-chat';
+      return callOpenAILike(
+        toChatCompletionsUrl(baseUrl),
+        key,
+        model,
+        text,
+        signal,
+        openrouterHeaders()
       );
     }
     case 'qwen': {

@@ -12,6 +12,9 @@ export type ClientSettings = {
   deepseekKey: string;
   deepseekBaseUrl: string;
   deepseekModel: string;
+  openrouterKey: string;
+  openrouterBaseUrl: string;
+  openrouterModel: string;
   qwenKey: string;
   mymemoryEmail: string;
   readerBackground: ReaderBackground;
@@ -29,6 +32,9 @@ export const DEFAULT_SETTINGS: ClientSettings = {
   deepseekKey: '',
   deepseekBaseUrl: '',
   deepseekModel: 'deepseek-chat',
+  openrouterKey: '',
+  openrouterBaseUrl: '',
+  openrouterModel: 'deepseek/deepseek-chat',
   qwenKey: '',
   mymemoryEmail: '',
   readerBackground: 'dark',
@@ -60,6 +66,8 @@ export function getProviderOverrides(s: ClientSettings): {
   geminiModel?: string;
   deepseekBaseUrl?: string;
   deepseekModel?: string;
+  openrouterBaseUrl?: string;
+  openrouterModel?: string;
   mymemoryEmail?: string;
 } {
   switch (s.provider) {
@@ -73,6 +81,12 @@ export function getProviderOverrides(s: ClientSettings): {
         apiKey: s.deepseekKey.trim() || undefined,
         deepseekBaseUrl: s.deepseekBaseUrl.trim() || undefined,
         deepseekModel: s.deepseekModel.trim() || undefined,
+      };
+    case 'openrouter':
+      return {
+        apiKey: s.openrouterKey.trim() || undefined,
+        openrouterBaseUrl: s.openrouterBaseUrl.trim() || undefined,
+        openrouterModel: s.openrouterModel.trim() || undefined,
       };
     case 'qwen':
       return { apiKey: s.qwenKey.trim() || undefined };

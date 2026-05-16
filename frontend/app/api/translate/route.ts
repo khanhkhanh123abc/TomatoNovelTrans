@@ -13,6 +13,8 @@ export async function POST(req: Request) {
       geminiModel?: string;
       deepseekBaseUrl?: string;
       deepseekModel?: string;
+      openrouterBaseUrl?: string;
+      openrouterModel?: string;
       mymemoryEmail?: string;
     };
     if (!body.text) return NextResponse.json({ error: 'text required' }, { status: 400 });
@@ -25,6 +27,8 @@ export async function POST(req: Request) {
         geminiModel: body.geminiModel,
         deepseekBaseUrl: body.deepseekBaseUrl,
         deepseekModel: body.deepseekModel,
+        openrouterBaseUrl: body.openrouterBaseUrl,
+        openrouterModel: body.openrouterModel,
         mymemoryEmail: body.mymemoryEmail,
       },
       req.signal

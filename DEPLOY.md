@@ -104,6 +104,9 @@ Verify: `curl https://<HF_USERNAME>-<HF_SPACE_NAME>.hf.space/api/health` → `{"
 | `DEEPSEEK_API_KEY` | key trong `DS2API_CONFIG_JSON.keys` nếu dùng DS2API nội bộ |
 | `DEEPSEEK_BASE_URL` | optional; để trống sẽ tự dùng `${AZURE_BACKEND_URL}/api/ds2api` |
 | `DEEPSEEK_MODEL` | optional, mặc định `deepseek-chat` |
+| `OPENROUTER_API_KEY` | optional, key OpenRouter |
+| `OPENROUTER_BASE_URL` | optional, mặc định `https://openrouter.ai/api` |
+| `OPENROUTER_MODEL` | optional, mặc định `deepseek/deepseek-chat` |
 | `QWEN_API_KEY` | optional |
 | `MYMEMORY_EMAIL` | optional |
 
